@@ -1,46 +1,52 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  signInStart,
+  signInSuccess,
+  signInFailure,
+} from '../redux/user/userSlice';
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+   const {loading, error} = useSelector((state) => state.user);
+
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.id]: e.target.value,
-    })
-  }
+    });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true);
-
+    e.preventDefault();
 
     try {
+      dispatch(signInStart());
+
       const res = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
-      })
+      });
 
-      const data = await res.json()
-        console.log(data)
-      if(data.sucess === false){
-        setLoading(false);
-        setError(data.message);
+      const data = await res.json();
+      console.log(data);
+
+      if (data.success === false) {
+        dispatch(signInFailure(data.message));
         return;
       }
-      setLoading(false);
-      setError(null);
+
+      dispatch(signInSuccess(data));
       navigate('/');
     } catch (error) {
-      setLoading(false);
-      setError(error.message);
+      dispatch(signInFailure(error.message));
     }
   };
 
@@ -51,7 +57,6 @@ export default function SignIn() {
       </h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-       
         <input
           type="email"
           placeholder="Email"
@@ -72,12 +77,12 @@ export default function SignIn() {
           disabled={loading}
           className="bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-80"
         >
-          {loading ? "Loading..." : "Sign In"}
+          {loading ? 'Loading...' : 'Sign In'}
         </button>
       </form>
 
       <div className="flex gap-2 mt-5">
-        <p>Dont have an account?</p>
+        <p>Don't have an account?</p>
 
         <Link to="/signup">
           <span className="text-blue-700 hover:underline">
@@ -85,11 +90,12 @@ export default function SignIn() {
           </span>
         </Link>
       </div>
+
       {error && (
         <div className="bg-red-100 text-red-700 p-3 rounded-lg mt-5">
           {error}
         </div>
       )}
     </div>
-  )
+  );
 }

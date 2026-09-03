@@ -10,7 +10,6 @@ export const signup = async (req, res, next) => {
     try {
         const { username, email, password } = req.body;
 
-        // Check required fields
         if (!username || !email || !password) {
             return next(
                 errorHandler(
@@ -20,7 +19,6 @@ export const signup = async (req, res, next) => {
             );
         }
 
-        // Check if username or email already exists
         const existingUser = await User.findOne({
             $or: [{ username }, { email }],
         });
@@ -34,25 +32,20 @@ export const signup = async (req, res, next) => {
             );
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create new user
         const newUser = new User({
             username,
             email,
             password: hashedPassword,
         });
 
-        // Save user
         await newUser.save();
 
-        // Send response
         res.status(201).json({
             success: true,
             message: "User created successfully",
         });
-
     } catch (error) {
         next(error);
     }
@@ -66,7 +59,6 @@ export const signin = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
-        // Check required fields
         if (!email || !password) {
             return next(
                 errorHandler(
@@ -76,7 +68,6 @@ export const signin = async (req, res, next) => {
             );
         }
 
-        // Find user
         const validUser = await User.findOne({ email });
 
         if (!validUser) {
@@ -88,7 +79,6 @@ export const signin = async (req, res, next) => {
             );
         }
 
-        // Check password
         const validPassword = await bcrypt.compare(
             password,
             validUser.password
@@ -103,7 +93,6 @@ export const signin = async (req, res, next) => {
             );
         }
 
-        // Create JWT
         const token = jwt.sign(
             {
                 id: validUser._id,
@@ -111,11 +100,9 @@ export const signin = async (req, res, next) => {
             process.env.JWT_SECRET
         );
 
-        // Remove password before sending user data
         const { password: hashedPassword, ...userData } =
             validUser._doc;
 
-        // Send token in HTTP-only cookie
         res
             .cookie("access_token", token, {
                 httpOnly: true,
@@ -126,7 +113,103 @@ export const signin = async (req, res, next) => {
                 message: "Login successful",
                 user: userData,
             });
+    } catch (error) {
+        next(error);
+    }
+};
 
+
+// =========================
+// GOOGLE SIGN IN
+// =========================
+export const google = async (req, res, next) => {
+    try {
+        const { email, name, photo } = req.body;
+
+        // Check required Google data
+        if (!email) {
+            return next(
+                errorHandler(400, "Google email is required")
+            );
+        }
+
+        // Check if user already exists
+        const user = await User.findOne({ email });
+
+        if (user) {
+            // Existing user
+            const token = jwt.sign(
+                {
+                    id: user._id,
+                },
+                process.env.JWT_SECRET
+            );
+
+            const { password, ...rest } = user._doc;
+
+            res
+                .cookie("access_token", token, {
+                    httpOnly: true,
+                })
+                .status(200)
+                .json({
+                    success: true,
+                    message: "Login successful",
+                    user: rest,
+                });
+
+        } else {
+            // Generate username
+            const baseUsername = name
+                ? name.split(" ").join("").toLowerCase()
+                : "user";
+
+            const randomNumber = Math.floor(
+                10000 + Math.random() * 90000
+            );
+
+            const username = `${baseUsername}${randomNumber}`;
+
+            // Generate random password
+            const generatedPassword =
+                Math.random().toString(36).slice(-8);
+
+            const hashedPassword = await bcrypt.hash(
+                generatedPassword,
+                10
+            );
+
+            // Create new user
+            const newUser = new User({
+                username,
+                email,
+                password: hashedPassword,
+                avatar: photo,
+            });
+
+            await newUser.save();
+
+            // Create JWT
+            const token = jwt.sign(
+                {
+                    id: newUser._id,
+                },
+                process.env.JWT_SECRET
+            );
+
+            const { password, ...rest } = newUser._doc;
+
+            res
+                .cookie("access_token", token, {
+                    httpOnly: true,
+                })
+                .status(200)
+                .json({
+                    success: true,
+                    message: "Google login successful",
+                    user: rest,
+                });
+        }
     } catch (error) {
         next(error);
     }

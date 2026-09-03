@@ -6,6 +6,16 @@ import authRoutes from "./routes/auth.route.js";
 
 dotenv.config();
 
+const app = express();
+
+// =========================
+// MIDDLEWARE
+// =========================
+app.use(express.json());
+
+// =========================
+// DATABASE
+// =========================
 mongoose
   .connect(process.env.MONGO)
   .then(() => {
@@ -15,30 +25,37 @@ mongoose
     console.error("❌ MongoDB connection error:", err);
   });
 
-const app = express();
-
-app.use(express.json());
-
+// =========================
+// ROUTES
+// =========================
 app.get("/", (req, res) => {
-  res.json({ message: "PrimePlaceEstate API is running" });
-});
-
-
-
-app.listen(3000, () => {
-  console.log("🚀 Server is running on port 3000");
+  res.json({
+    message: "PrimePlaceEstate API is running",
+  });
 });
 
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 
-app.use((req, res, next) => {
+// =========================
+// ERROR HANDLER
+// =========================
+app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
-   return res.status(statusCode).json({ 
+
+  console.error("❌ Error:", err);
+
+  return res.status(statusCode).json({
     success: false,
-  statusCode,
-  message,
+    statusCode,
+    message,
   });
 });
 
+// =========================
+// START SERVER
+// =========================
+app.listen(3000, () => {
+  console.log("🚀 Server is running on port 3000");
+});

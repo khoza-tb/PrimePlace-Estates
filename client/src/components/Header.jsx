@@ -10,7 +10,7 @@ export default function Header() {
       <div className="flex justify-between items-center max-w-6xl mx-auto p-3">
 
         {/* Logo */}
-        <Link to="/Home">
+        <Link to="/">
           <h1 className="font-bold text-sm sm:text-xl flex flex-wrap">
             <span className="text-slate-500">PrimePlace</span>
             <span className="text-slate-700">Estate</span>
@@ -30,31 +30,35 @@ export default function Header() {
         {/* Navigation */}
         <ul className="flex gap-4 items-center">
 
-          <Link to="/Home">
+          <Link to="/">
             <li className="hidden sm:inline text-slate-700 hover:underline">
               Home
             </li>
           </Link>
 
-          <Link to="/About">
+          <Link to="/about">
             <li className="hidden sm:inline text-slate-700 hover:underline">
               About
             </li>
           </Link>
 
+          {/* Conditional Navigation */}
           <Link to="/profile">
-            {currentUser ? (
-              <img className="rounded-full h-7 w-7 object-cover"
-                src={currentUser.avatar}
-                alt="Profile"
-                
-              />
-            ) : (
+          {currentUser ? (
+            
+              <img 
+                className="rounded-full h-7 w-7 object-cover cursor-pointer hover:opacity-95"
+                src={currentUser.avatar} 
+                alt="Profile" />
+           
+          ) : (
+           
               <li className="text-slate-700 hover:underline">
                 Sign In
               </li>
-            )}
-          </Link>
+          
+          )}
+            </Link>
 
         </ul>
       </div>
